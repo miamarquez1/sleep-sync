@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard • SleepSync</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><a href="../index.html">SleepSync</a></div>
+        <nav class="nav">
+          <button id="logout-button" class="button secondary" type="button">Log Out</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="container dashboard">
+        <div class="dashboard-header">
+          <div>
+            <h1>Your Sleep Dashboard</h1>
+            <p class="helper">Track your streaks, trends, and nightly habits.</p>
+          </div>
+        </div>
+
+        <section class="dashboard-top">
+          <div class="card stat-card">
+            <h2>Current streak</h2>
+            <p class="stat-value"><span id="current-streak">0</span> days</p>
+            <p class="helper">Consecutive days with logs.</p>
+          </div>
+          <div class="card stat-card">
+            <h2>Longest streak</h2>
+            <p class="stat-value"><span id="longest-streak">0</span> days</p>
+            <p class="helper">Your best run so far.</p>
+          </div>
+          <div class="card stat-card">
+            <h2>Average sleep</h2>
+            <p class="stat-value"><span id="average-hours">0.0</span> hrs</p>
+            <p class="helper">Based on all logged nights.</p>
+          </div>
+          <div class="card stat-card">
+            <h2>Average quality</h2>
+            <p class="stat-value"><span id="average-quality">0.0</span> / 5</p>
+            <p class="helper">Based on your ratings.</p>
+          </div>
+        </section>
+
+        <section class="dashboard-middle">
+          <div class="card chart-card">
+            <div class="card-header">
+              <h2>Sleep Hours (Last 7 Days)</h2>
+              <p class="helper">Bar chart of your logged hours.</p>
+            </div>
+            <div id="sleep-chart" class="chart" aria-label="Sleep hours chart"></div>
+          </div>
+          <div class="card insights-card">
+            <div class="card-header">
+              <h2>Sleep Quality Insights</h2>
+              <p class="helper">Best and worst nights based on your ratings.</p>
+            </div>
+            <ul class="insight-list">
+              <li>
+                <span>Best sleep night</span>
+                <strong id="best-night">—</strong>
+              </li>
+              <li>
+                <span>Worst sleep night</span>
+                <strong id="worst-night">—</strong>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="dashboard-bottom">
+          <div class="card form-card">
+            <div class="card-header">
+              <h2>Add Sleep Log</h2>
+              <p class="helper">Log your sleep start, wake time, and quality.</p>
+            </div>
+            <form id="sleep-form" novalidate>
+              <input type="hidden" id="sleep-log-id" />
+              <div class="form-grid">
+                <div class="form-field">
+                  <label for="sleep-date">Date</label>
+                  <input id="sleep-date" type="date" required />
+                </div>
+                <div class="form-field">
+                  <label for="sleep-start">Sleep start time</label>
+                  <input id="sleep-start" type="time" required />
+                </div>
+                <div class="form-field">
+                  <label for="sleep-end">Wake up time</label>
+                  <input id="sleep-end" type="time" required />
+                </div>
+                <div class="form-field">
+                  <label for="sleep-hours">Total hours slept</label>
+                  <input id="sleep-hours" type="text" readonly />
+                </div>
+                <div class="form-field">
+                  <label for="sleep-quality">Sleep quality (1–5)</label>
+                  <select id="sleep-quality" required>
+                    <option value="" disabled selected>Select rating</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                </div>
+                <div class="form-field form-field-full">
+                  <label for="sleep-notes">Notes</label>
+                  <textarea id="sleep-notes" rows="3" placeholder="Felt well rested."></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button id="sleep-submit" class="button primary" type="submit">Add Entry</button>
+                <button id="sleep-cancel" class="button secondary" type="button">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card history-card">
+            <div class="card-header">
+              <h2>Sleep History</h2>
+              <p class="helper">Edit or delete entries directly from your dashboard.</p>
+            </div>
+            <div id="sleep-history" class="history-list"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="../js/storage.js" defer></script>
+    <script src="../js/app.js" defer></script>
+  </body>
+</html>

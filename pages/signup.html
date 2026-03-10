@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign Up • SleepSync</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><a href="../index.html">SleepSync</a></div>
+        <nav class="nav">
+          <a class="nav-link" href="login.html">Log In</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page auth-page">
+      <div class="container">
+        <div class="page-card">
+          <h1>Create Account</h1>
+          <p class="helper">No backend yet. This is a UI-only demo.</p>
+
+          <form id="signup-form" class="auth-form" novalidate>
+            <div class="form-field">
+              <label for="signup-email">Email</label>
+              <input id="signup-email" name="email" type="email" placeholder="you@example.com" required />
+            </div>
+            <div class="form-field">
+              <label for="signup-password">Password</label>
+              <input id="signup-password" name="password" type="password" placeholder="Create a password" required />
+            </div>
+            <button class="button primary" type="submit">Create Account</button>
+          </form>
+
+          <p id="auth-message" class="helper" role="status"></p>
+          <p class="helper">
+            Already have an account? <a class="text-link" href="login.html">Login</a>
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script src="../js/storage.js" defer></script>
+    <script src="../js/app.js" defer></script>
+  </body>
+</html>

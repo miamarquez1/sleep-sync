@@ -3,11 +3,11 @@ const App = (() => {
 
   const formatDateLabel = (dateStr) => {
     const date = new Date(`${dateStr}T00:00:00`);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const formatHours = (value, decimals = 2) => {
-    if (!Number.isFinite(value)) return '0.0';
+    if (!Number.isFinite(value)) return "0.0";
     return value.toFixed(decimals);
   };
 
@@ -39,7 +39,9 @@ const App = (() => {
       if (!prevDate) {
         currentRun = 1;
       } else {
-        const diffDays = Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round(
+          (currentDate - prevDate) / (1000 * 60 * 60 * 24),
+        );
         currentRun = diffDays === 1 ? currentRun + 1 : 1;
       }
       longest = Math.max(longest, currentRun);
@@ -51,7 +53,9 @@ const App = (() => {
     for (let i = 0; i < descDates.length - 1; i += 1) {
       const currentDate = new Date(`${descDates[i]}T00:00:00`);
       const nextDate = new Date(`${descDates[i + 1]}T00:00:00`);
-      const diffDays = Math.round((currentDate - nextDate) / (1000 * 60 * 60 * 24));
+      const diffDays = Math.round(
+        (currentDate - nextDate) / (1000 * 60 * 60 * 24),
+      );
       if (diffDays === 1) {
         current += 1;
       } else {
@@ -78,14 +82,16 @@ const App = (() => {
     const best = logs.reduce((result, log) => {
       if (!result) return log;
       if (log.quality > result.quality) return log;
-      if (log.quality === result.quality && log.hoursSlept > result.hoursSlept) return log;
+      if (log.quality === result.quality && log.hoursSlept > result.hoursSlept)
+        return log;
       return result;
     }, null);
 
     const worst = logs.reduce((result, log) => {
       if (!result) return log;
       if (log.quality < result.quality) return log;
-      if (log.quality === result.quality && log.hoursSlept < result.hoursSlept) return log;
+      if (log.quality === result.quality && log.hoursSlept < result.hoursSlept)
+        return log;
       return result;
     }, null);
 
@@ -112,7 +118,10 @@ const App = (() => {
       const log = map[key];
       data.push({
         date: key,
-        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        label: date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
         hours: log ? log.hoursSlept : 0,
       });
     }
@@ -120,26 +129,26 @@ const App = (() => {
   };
 
   const renderChart = (logs) => {
-    const chart = $('#sleep-chart');
+    const chart = $("#sleep-chart");
     if (!chart) return;
-    chart.innerHTML = '';
+    chart.innerHTML = "";
 
     const data = getChartData(logs);
     const maxHours = Math.max(8, ...data.map((entry) => entry.hours));
 
     data.forEach((entry) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'chart-bar';
+      const wrapper = document.createElement("div");
+      wrapper.className = "chart-bar";
 
-      const value = document.createElement('span');
+      const value = document.createElement("span");
       value.textContent = `${formatHours(entry.hours, 1)}h`;
 
-      const bar = document.createElement('div');
-      bar.className = 'bar';
+      const bar = document.createElement("div");
+      bar.className = "bar";
       const height = entry.hours === 0 ? 8 : (entry.hours / maxHours) * 100;
       bar.style.height = `${Math.max(height, 8)}%`;
 
-      const label = document.createElement('span');
+      const label = document.createElement("span");
       label.textContent = entry.label;
 
       wrapper.append(value, bar, label);
@@ -148,9 +157,9 @@ const App = (() => {
   };
 
   const renderHistory = (logs) => {
-    const container = $('#sleep-history');
+    const container = $("#sleep-history");
     if (!container) return;
-    container.innerHTML = '';
+    container.innerHTML = "";
 
     if (!logs.length) {
       container.innerHTML = `
@@ -175,11 +184,13 @@ const App = (() => {
       .slice()
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .forEach((log) => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
+        const item = document.createElement("div");
+        item.className = "history-item";
         item.dataset.id = log.id;
 
-        const notesPreview = log.notes ? log.notes.slice(0, 80) : 'No notes added.';
+        const notesPreview = log.notes
+          ? log.notes.slice(0, 80)
+          : "No notes added.";
 
         item.innerHTML = `
           <div class="history-header">
@@ -203,12 +214,12 @@ const App = (() => {
   };
 
   const renderStats = (logs) => {
-    const currentEl = $('#current-streak');
-    const longestEl = $('#longest-streak');
-    const avgHoursEl = $('#average-hours');
-    const avgQualityEl = $('#average-quality');
-    const bestEl = $('#best-night');
-    const worstEl = $('#worst-night');
+    const currentEl = $("#current-streak");
+    const longestEl = $("#longest-streak");
+    const avgHoursEl = $("#average-hours");
+    const avgQualityEl = $("#average-quality");
+    const bestEl = $("#best-night");
+    const worstEl = $("#worst-night");
 
     const streaks = computeStreaks(logs);
     const insights = computeInsights(logs);
@@ -216,125 +227,133 @@ const App = (() => {
     if (currentEl) currentEl.textContent = streaks.current;
     if (longestEl) longestEl.textContent = streaks.longest;
     if (avgHoursEl) avgHoursEl.textContent = formatHours(insights.avgHours, 2);
-    if (avgQualityEl) avgQualityEl.textContent = formatHours(insights.avgQuality, 1);
+    if (avgQualityEl)
+      avgQualityEl.textContent = formatHours(insights.avgQuality, 1);
 
     if (bestEl) {
       bestEl.textContent = insights.best
         ? `${formatDateLabel(insights.best.date)} • ${formatHours(insights.best.hoursSlept, 2)}h (${insights.best.quality}/5)`
-        : '—';
+        : "—";
     }
 
     if (worstEl) {
       worstEl.textContent = insights.worst
         ? `${formatDateLabel(insights.worst.date)} • ${formatHours(insights.worst.hoursSlept, 2)}h (${insights.worst.quality}/5)`
-        : '—';
+        : "—";
     }
   };
 
-  const initAuth = () => {
-    const loginForm = $('#login-form');
-    const signupForm = $('#signup-form');
-    const message = $('#auth-message');
+  const initAuth = async () => {
+    const loginForm = $("#login-form");
+    const signupForm = $("#signup-form");
+    const message = $("#auth-message");
 
     if (!loginForm && !signupForm) return;
-    if (!window.SleepSyncStorage) return;
+    if (!window.SleepSyncAuth) return;
 
-    const session = SleepSyncStorage.getSession();
-    if (session && session.userId) {
-      window.location.href = 'dashboard.html';
+    await SleepSyncAuth.init();
+    if (!SleepSyncAuth.isConfigured()) {
+      if (message) {
+        message.textContent =
+          "Firebase auth is not configured. Add your SLEEPSYNC_FIREBASE_CONFIG in the page before using auth.";
+      }
       return;
     }
 
-    const handleAuth = (mode) => (event) => {
+    await SleepSyncAuth.requireGuest("dashboard.html");
+    if (SleepSyncAuth.getCurrentUser()) {
+      return;
+    }
+
+    const handleAuth = (mode) => async (event) => {
       event.preventDefault();
       if (!message) return;
-      message.textContent = '';
+      message.textContent = "";
 
       const form = event.currentTarget;
       const email = form.querySelector('input[name="email"]').value.trim();
-      const password = form.querySelector('input[name="password"]').value.trim();
+      const password = form
+        .querySelector('input[name="password"]')
+        .value.trim();
 
       if (!email || !password) {
-        message.textContent = 'Please enter both email and password.';
+        message.textContent = "Please enter both email and password.";
         return;
       }
 
-      if (mode === 'signup') {
-        const result = SleepSyncStorage.createUser(email, password);
-        if (result.error) {
-          message.textContent = result.error;
-          return;
+      try {
+        if (mode === "signup") {
+          await SleepSyncAuth.signup(email, password);
+        } else {
+          await SleepSyncAuth.login(email, password);
         }
-        SleepSyncStorage.setSession(result.user.id);
-        window.location.href = 'dashboard.html';
-        return;
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        message.textContent = SleepSyncAuth.mapAuthError(error);
       }
-
-      const result = SleepSyncStorage.authenticate(email, password);
-      if (result.error) {
-        message.textContent = result.error;
-        return;
-      }
-
-      SleepSyncStorage.setSession(result.user.id);
-      window.location.href = 'dashboard.html';
     };
 
-    if (loginForm) loginForm.addEventListener('submit', handleAuth('login'));
-    if (signupForm) signupForm.addEventListener('submit', handleAuth('signup'));
+    if (loginForm) loginForm.addEventListener("submit", handleAuth("login"));
+    if (signupForm) signupForm.addEventListener("submit", handleAuth("signup"));
   };
 
-  const initDashboard = () => {
-    const form = $('#sleep-form');
-    if (!form || !window.SleepSyncStorage) return;
+  const initDashboard = async () => {
+    const form = $("#sleep-form");
+    if (!form || !window.SleepSyncStorage || !window.SleepSyncAuth) return;
 
-    const session = SleepSyncStorage.getSession();
-    if (!session || !session.userId) {
-      window.location.href = 'login.html';
+    await SleepSyncAuth.init();
+    const user = await SleepSyncAuth.requireAuthenticated("login.html");
+    if (!user || !user.uid) {
       return;
     }
 
-    const logoutButton = $('#logout-button');
+    const userId = user.uid;
+
+    const logoutButton = $("#logout-button");
     if (logoutButton) {
-      logoutButton.addEventListener('click', () => {
-        SleepSyncStorage.clearSession();
-        window.location.href = 'login.html';
+      logoutButton.addEventListener("click", async () => {
+        await SleepSyncAuth.logout();
+        window.location.href = "login.html";
       });
     }
 
-    const dateInput = $('#sleep-date');
-    const startInput = $('#sleep-start');
-    const endInput = $('#sleep-end');
-    const hoursInput = $('#sleep-hours');
-    const qualityInput = $('#sleep-quality');
-    const notesInput = $('#sleep-notes');
-    const logIdInput = $('#sleep-log-id');
-    const submitButton = $('#sleep-submit');
-    const cancelButton = $('#sleep-cancel');
-    const historyContainer = $('#sleep-history');
+    const dateInput = $("#sleep-date");
+    const startInput = $("#sleep-start");
+    const endInput = $("#sleep-end");
+    const hoursInput = $("#sleep-hours");
+    const qualityInput = $("#sleep-quality");
+    const notesInput = $("#sleep-notes");
+    const logIdInput = $("#sleep-log-id");
+    const submitButton = $("#sleep-submit");
+    const cancelButton = $("#sleep-cancel");
+    const historyContainer = $("#sleep-history");
 
-    let logs = SleepSyncStorage.getLogsForUser(session.userId);
+    let logs = SleepSyncStorage.getLogsForUser(userId);
     let editingId = null;
 
     const refresh = () => {
-      logs = SleepSyncStorage.getLogsForUser(session.userId);
+      logs = SleepSyncStorage.getLogsForUser(userId);
       renderStats(logs);
       renderChart(logs);
       renderHistory(logs);
     };
 
     const updateHoursPreview = () => {
-      const hours = calculateHours(dateInput.value, startInput.value, endInput.value);
-      hoursInput.value = hours ? formatHours(hours, 2) : '';
+      const hours = calculateHours(
+        dateInput.value,
+        startInput.value,
+        endInput.value,
+      );
+      hoursInput.value = hours ? formatHours(hours, 2) : "";
     };
 
     const resetForm = () => {
       editingId = null;
       form.reset();
-      hoursInput.value = '';
-      logIdInput.value = '';
-      submitButton.textContent = 'Add Entry';
-      cancelButton.classList.add('hidden');
+      hoursInput.value = "";
+      logIdInput.value = "";
+      submitButton.textContent = "Add Entry";
+      cancelButton.classList.add("hidden");
     };
 
     const setEditing = (log) => {
@@ -345,27 +364,36 @@ const App = (() => {
       endInput.value = log.wakeTime;
       hoursInput.value = formatHours(log.hoursSlept, 2);
       qualityInput.value = String(log.quality);
-      notesInput.value = log.notes || '';
-      submitButton.textContent = 'Update Entry';
-      cancelButton.classList.remove('hidden');
+      notesInput.value = log.notes || "";
+      submitButton.textContent = "Update Entry";
+      cancelButton.classList.remove("hidden");
     };
 
-    if (dateInput) dateInput.addEventListener('change', updateHoursPreview);
-    if (startInput) startInput.addEventListener('change', updateHoursPreview);
-    if (endInput) endInput.addEventListener('change', updateHoursPreview);
+    if (dateInput) dateInput.addEventListener("change", updateHoursPreview);
+    if (startInput) startInput.addEventListener("change", updateHoursPreview);
+    if (endInput) endInput.addEventListener("change", updateHoursPreview);
 
-    cancelButton.addEventListener('click', resetForm);
-    cancelButton.classList.add('hidden');
+    cancelButton.addEventListener("click", resetForm);
+    cancelButton.classList.add("hidden");
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener("submit", (event) => {
       event.preventDefault();
 
-      if (!dateInput.value || !startInput.value || !endInput.value || !qualityInput.value) {
+      if (
+        !dateInput.value ||
+        !startInput.value ||
+        !endInput.value ||
+        !qualityInput.value
+      ) {
         form.reportValidity();
         return;
       }
 
-      const hours = calculateHours(dateInput.value, startInput.value, endInput.value);
+      const hours = calculateHours(
+        dateInput.value,
+        startInput.value,
+        endInput.value,
+      );
       const entry = {
         date: dateInput.value,
         sleepStart: startInput.value,
@@ -376,9 +404,9 @@ const App = (() => {
       };
 
       if (editingId) {
-        SleepSyncStorage.updateLog(session.userId, editingId, entry);
+        SleepSyncStorage.updateLog(userId, editingId, entry);
       } else {
-        SleepSyncStorage.addLog(session.userId, {
+        SleepSyncStorage.addLog(userId, {
           ...entry,
           id: SleepSyncStorage.createId(),
           createdAt: new Date().toISOString(),
@@ -390,23 +418,23 @@ const App = (() => {
     });
 
     if (historyContainer) {
-      historyContainer.addEventListener('click', (event) => {
-        const button = event.target.closest('button');
+      historyContainer.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
         if (!button) return;
         const action = button.dataset.action;
-        const item = button.closest('.history-item');
+        const item = button.closest(".history-item");
         if (!item) return;
         const logId = item.dataset.id;
 
-        if (action === 'edit') {
+        if (action === "edit") {
           const log = logs.find((entry) => entry.id === logId);
           if (log) setEditing(log);
         }
 
-        if (action === 'delete') {
-          const shouldDelete = window.confirm('Delete this sleep log?');
+        if (action === "delete") {
+          const shouldDelete = window.confirm("Delete this sleep log?");
           if (!shouldDelete) return;
-          SleepSyncStorage.deleteLog(session.userId, logId);
+          SleepSyncStorage.deleteLog(userId, logId);
           refresh();
         }
       });
@@ -420,12 +448,12 @@ const App = (() => {
     refresh();
   };
 
-  const init = () => {
-    initAuth();
-    initDashboard();
+  const init = async () => {
+    await initAuth();
+    await initDashboard();
   };
 
   return { init };
 })();
 
-document.addEventListener('DOMContentLoaded', App.init);
+document.addEventListener("DOMContentLoaded", App.init);

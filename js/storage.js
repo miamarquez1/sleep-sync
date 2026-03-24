@@ -1,7 +1,5 @@
 const SleepSyncStorage = (() => {
-  const USERS_KEY = 'sleepsync_users';
-  const LOGS_KEY = 'sleepsync_logs';
-  const SESSION_KEY = 'sleepsync_session';
+  const LOGS_KEY = "sleepsync_logs";
 
   const safeParse = (raw, fallback) => {
     if (!raw) return fallback;
@@ -9,65 +7,21 @@ const SleepSyncStorage = (() => {
       const parsed = JSON.parse(raw);
       return parsed ?? fallback;
     } catch (error) {
-      console.warn('SleepSync: invalid storage data.', error);
+      console.warn("SleepSync: invalid storage data.", error);
       return fallback;
     }
   };
 
   const createId = () => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
       return crypto.randomUUID();
     }
     return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   };
 
-  const getUsers = () => safeParse(localStorage.getItem(USERS_KEY), {});
-  const saveUsers = (users) => localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
   const getLogs = () => safeParse(localStorage.getItem(LOGS_KEY), {});
-  const saveLogs = (logsByUser) => localStorage.setItem(LOGS_KEY, JSON.stringify(logsByUser));
-
-  const setSession = (userId) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId }));
-  };
-
-  const getSession = () => safeParse(localStorage.getItem(SESSION_KEY), null);
-
-  const clearSession = () => localStorage.removeItem(SESSION_KEY);
-
-  const createUser = (email, password) => {
-    const users = getUsers();
-    const existing = Object.values(users).find((user) => user.email === email);
-    if (existing) {
-      return { error: 'An account with this email already exists.' };
-    }
-
-    const id = createId();
-    const newUser = {
-      id,
-      email,
-      password,
-      createdAt: new Date().toISOString(),
-    };
-
-    users[id] = newUser;
-    saveUsers(users);
-    return { user: newUser };
-  };
-
-  const authenticate = (email, password) => {
-    const users = getUsers();
-    const user = Object.values(users).find((item) => item.email === email);
-    if (!user || user.password !== password) {
-      return { error: 'Invalid email or password.' };
-    }
-    return { user };
-  };
-
-  const getUser = (userId) => {
-    const users = getUsers();
-    return users[userId] ?? null;
-  };
+  const saveLogs = (logsByUser) =>
+    localStorage.setItem(LOGS_KEY, JSON.stringify(logsByUser));
 
   const getLogsForUser = (userId) => {
     const logsByUser = getLogs();
@@ -104,19 +58,9 @@ const SleepSyncStorage = (() => {
 
   return {
     createId,
-    createUser,
-    authenticate,
-    getSession,
-    setSession,
-    clearSession,
-    getUser,
     getLogsForUser,
     addLog,
     updateLog,
     deleteLog,
   };
 })();
-
-// Future Firebase structure (planned):
-// users/{userId} => { email, createdAt }
-// users/{userId}/sleepLogs/{logId} => { date, sleepStart, wakeTime, hoursSlept, quality, notes }

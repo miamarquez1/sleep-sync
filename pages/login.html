@@ -20,28 +20,51 @@
       <div class="container">
         <div class="page-card">
           <h1>Login</h1>
-          <p class="helper">No backend yet. This is a UI-only demo.</p>
+          <p class="helper">Sign in with your Firebase account.</p>
 
           <form id="login-form" class="auth-form" novalidate>
             <div class="form-field">
               <label for="login-email">Email</label>
-              <input id="login-email" name="email" type="email" placeholder="you@example.com" required />
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+              />
             </div>
             <div class="form-field">
               <label for="login-password">Password</label>
-              <input id="login-password" name="password" type="password" placeholder="••••••••" required />
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
             </div>
             <button class="button primary" type="submit">Login</button>
           </form>
 
           <p id="auth-message" class="helper" role="status"></p>
           <p class="helper">
-            Don’t have an account? <a class="text-link" href="signup.html">Create one</a>
+            Don’t have an account?
+            <a class="text-link" href="signup.html">Create one</a>
           </p>
         </div>
       </div>
     </main>
 
+    <script
+      src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"
+      defer
+    ></script>
+    <script
+      src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"
+      defer
+    ></script>
+    <script src="../js/firebase-config.js" defer></script>
+    <script src="../js/firebase-auth.js" defer></script>
     <script src="../js/storage.js" defer></script>
     <script src="../js/app.js" defer></script>
   </body>

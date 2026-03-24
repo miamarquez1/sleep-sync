@@ -11,7 +11,9 @@
       <div class="container">
         <div class="brand"><a href="../index.html">SleepSync</a></div>
         <nav class="nav">
-          <button id="logout-button" class="button secondary" type="button">Log Out</button>
+          <button id="logout-button" class="button secondary" type="button">
+            Log Out
+          </button>
         </nav>
       </div>
     </header>
@@ -21,7 +23,9 @@
         <div class="dashboard-header">
           <div>
             <h1>Your Sleep Dashboard</h1>
-            <p class="helper">Track your streaks, trends, and nightly habits.</p>
+            <p class="helper">
+              Track your streaks, trends, and nightly habits.
+            </p>
           </div>
         </div>
 
@@ -54,7 +58,11 @@
               <h2>Sleep Hours (Last 7 Days)</h2>
               <p class="helper">Bar chart of your logged hours.</p>
             </div>
-            <div id="sleep-chart" class="chart" aria-label="Sleep hours chart"></div>
+            <div
+              id="sleep-chart"
+              class="chart"
+              aria-label="Sleep hours chart"
+            ></div>
           </div>
           <div class="card insights-card">
             <div class="card-header">
@@ -78,7 +86,9 @@
           <div class="card form-card">
             <div class="card-header">
               <h2>Add Sleep Log</h2>
-              <p class="helper">Log your sleep start, wake time, and quality.</p>
+              <p class="helper">
+                Log your sleep start, wake time, and quality.
+              </p>
             </div>
             <form id="sleep-form" novalidate>
               <input type="hidden" id="sleep-log-id" />
@@ -112,12 +122,24 @@
                 </div>
                 <div class="form-field form-field-full">
                   <label for="sleep-notes">Notes</label>
-                  <textarea id="sleep-notes" rows="3" placeholder="Felt well rested."></textarea>
+                  <textarea
+                    id="sleep-notes"
+                    rows="3"
+                    placeholder="Felt well rested."
+                  ></textarea>
                 </div>
               </div>
               <div class="form-actions">
-                <button id="sleep-submit" class="button primary" type="submit">Add Entry</button>
-                <button id="sleep-cancel" class="button secondary" type="button">Cancel</button>
+                <button id="sleep-submit" class="button primary" type="submit">
+                  Add Entry
+                </button>
+                <button
+                  id="sleep-cancel"
+                  class="button secondary"
+                  type="button"
+                >
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
@@ -125,7 +147,9 @@
           <div class="card history-card">
             <div class="card-header">
               <h2>Sleep History</h2>
-              <p class="helper">Edit or delete entries directly from your dashboard.</p>
+              <p class="helper">
+                Edit or delete entries directly from your dashboard.
+              </p>
             </div>
             <div id="sleep-history" class="history-list"></div>
           </div>
@@ -133,6 +157,16 @@
       </div>
     </main>
 
+    <script
+      src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"
+      defer
+    ></script>
+    <script
+      src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"
+      defer
+    ></script>
+    <script src="../js/firebase-config.js" defer></script>
+    <script src="../js/firebase-auth.js" defer></script>
     <script src="../js/storage.js" defer></script>
     <script src="../js/app.js" defer></script>
   </body>

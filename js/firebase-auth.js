@@ -2,6 +2,7 @@ const SleepSyncAuth = (() => {
   let auth = null;
   let initialized = false;
   let configured = false;
+  let initError = "";
 
   const REQUIRED_CONFIG_KEYS = ["apiKey", "authDomain", "projectId", "appId"];
 
@@ -23,22 +24,31 @@ const SleepSyncAuth = (() => {
 
   const init = async () => {
     if (initialized) {
-      return { configured, auth };
+      return { configured, auth, error: initError };
     }
 
     initialized = true;
+    initError = "";
+
+    if (window.location.protocol === "file:") {
+      initError =
+        "Firebase Authentication does not work from file:// URLs. Run a local server (for example: npx serve .) and open http://localhost instead.";
+      console.error(`SleepSyncAuth: ${initError}`);
+      return { configured: false, auth: null, error: initError };
+    }
 
     if (!window.firebase) {
-      console.error("SleepSyncAuth: Firebase SDK is not loaded.");
-      return { configured: false, auth: null };
+      initError = "Firebase SDK is not loaded.";
+      console.error(`SleepSyncAuth: ${initError}`);
+      return { configured: false, auth: null, error: initError };
     }
 
     const firebaseConfig = getFirebaseConfig();
     if (!firebaseConfig) {
-      console.warn(
-        "SleepSyncAuth: Missing or invalid SLEEPSYNC_FIREBASE_CONFIG.",
-      );
-      return { configured: false, auth: null };
+      initError =
+        "Missing or invalid SLEEPSYNC_FIREBASE_CONFIG in js/firebase-config.js.";
+      console.warn(`SleepSyncAuth: ${initError}`);
+      return { configured: false, auth: null, error: initError };
     }
 
     if (!firebase.apps.length) {
@@ -54,10 +64,11 @@ const SleepSyncAuth = (() => {
       console.error("SleepSyncAuth: Failed to set auth persistence.", error);
     }
 
-    return { configured: true, auth };
+    return { configured: true, auth, error: "" };
   };
 
   const isConfigured = () => configured;
+  const getInitError = () => initError;
 
   const onAuthStateChangedOnce = async () => {
     await init();
@@ -134,7 +145,20 @@ const SleepSyncAuth = (() => {
       case "auth/wrong-password":
       case "auth/invalid-credential":
         return "Invalid email or password.";
+      case "auth/operation-not-allowed":
+        return "Email/Password sign-in is disabled in Firebase Console. Enable it under Authentication > Sign-in method.";
+      case "auth/unauthorized-domain":
+        return "This domain is not authorized in Firebase. Add it under Authentication > Settings > Authorized domains.";
+      case "auth/network-request-failed":
+        return "Network error while contacting Firebase. Check your internet connection and try again.";
+      case "auth/operation-not-supported-in-this-environment":
+        return "This environment does not support Firebase auth (common on file://). Use a local server and localhost.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Wait a few minutes and try again.";
       default:
+        if (error && error.message && code) {
+          return `${error.message} (${code})`;
+        }
         return error && error.message
           ? error.message
           : "Authentication failed. Please try again.";
@@ -144,6 +168,7 @@ const SleepSyncAuth = (() => {
   return {
     init,
     isConfigured,
+    getInitError,
     getCurrentUser,
     signup,
     login,
@@ -153,3 +178,5 @@ const SleepSyncAuth = (() => {
     mapAuthError,
   };
 })();
+
+window.SleepSyncAuth = SleepSyncAuth;

@@ -11,6 +11,14 @@ const App = (() => {
     return value.toFixed(decimals);
   };
 
+  const parseNumberOrNull = (value) => {
+    if (value === "" || value === null || typeof value === "undefined") {
+      return null;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const calculateHours = (date, start, end) => {
     if (!date || !start || !end) return null;
     const startTime = new Date(`${date}T${start}`);
@@ -105,7 +113,12 @@ const App = (() => {
 
   const getChartData = (logs) => {
     const map = logs.reduce((acc, log) => {
-      acc[log.date] = log;
+      if (!acc[log.date]) {
+        acc[log.date] = { totalHours: 0, count: 0 };
+      }
+      const hours = Number(log.hoursSlept);
+      acc[log.date].totalHours += Number.isFinite(hours) ? hours : 0;
+      acc[log.date].count += 1;
       return acc;
     }, {});
 
@@ -115,14 +128,15 @@ const App = (() => {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const key = date.toISOString().slice(0, 10);
-      const log = map[key];
+      const day = map[key];
+      const hours = day ? day.totalHours : 0;
       data.push({
         date: key,
         label: date.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
         }),
-        hours: log ? log.hoursSlept : 0,
+        hours,
       });
     }
     return data;
@@ -134,7 +148,9 @@ const App = (() => {
     chart.innerHTML = "";
 
     const data = getChartData(logs);
-    const maxHours = Math.max(8, ...data.map((entry) => entry.hours));
+    const chartHeight = chart.clientHeight || 220;
+    const maxBarHeight = Math.max(80, chartHeight - 90);
+    const minBarHeight = 10;
 
     data.forEach((entry) => {
       const wrapper = document.createElement("div");
@@ -145,8 +161,12 @@ const App = (() => {
 
       const bar = document.createElement("div");
       bar.className = "bar";
-      const height = entry.hours === 0 ? 8 : (entry.hours / maxHours) * 100;
-      bar.style.height = `${Math.max(height, 8)}%`;
+      const clampedHours = Math.max(0, Math.min(entry.hours, 8));
+      const ratio = clampedHours / 8;
+      const pixelHeight = Math.round(
+        minBarHeight + ratio * (maxBarHeight - minBarHeight),
+      );
+      bar.style.height = `${pixelHeight}px`;
 
       const label = document.createElement("span");
       label.textContent = entry.label;
@@ -156,12 +176,30 @@ const App = (() => {
     });
   };
 
-  const renderHistory = (logs) => {
+  const renderHistory = (logs, options = {}) => {
     const container = $("#sleep-history");
     if (!container) return;
     container.innerHTML = "";
 
+    const {
+      showExampleWhenEmpty = true,
+      emptyTitle = "No matching entries",
+      emptyMessage = "Try adjusting your filters.",
+    } = options;
+
     if (!logs.length) {
+      if (!showExampleWhenEmpty) {
+        container.innerHTML = `
+          <div class="history-item">
+            <div class="history-header">
+              <strong>${emptyTitle}</strong>
+            </div>
+            <p class="history-notes">${emptyMessage}</p>
+          </div>
+        `;
+        return;
+      }
+
       container.innerHTML = `
         <div class="history-item">
           <div class="history-header">
@@ -205,7 +243,12 @@ const App = (() => {
           <p class="history-notes">Notes: ${notesPreview}</p>
           <div class="history-actions">
             <button class="button secondary" type="button" data-action="edit">Edit</button>
-            <button class="button danger" type="button" data-action="delete">Delete</button>
+            <button
+              class="button danger"
+              type="button"
+              data-action="delete"
+              aria-label="Delete sleep log for ${formatDateLabel(log.date)}"
+            >Delete</button>
           </div>
         `;
 
@@ -255,7 +298,8 @@ const App = (() => {
     if (!SleepSyncAuth.isConfigured()) {
       if (message) {
         message.textContent =
-          "Firebase auth is not configured. Add your SLEEPSYNC_FIREBASE_CONFIG in the page before using auth.";
+          SleepSyncAuth.getInitError() ||
+          "Firebase auth is not configured. Add your SLEEPSYNC_FIREBASE_CONFIG in js/firebase-config.js before using auth.";
       }
       return;
     }
@@ -289,6 +333,7 @@ const App = (() => {
         }
         window.location.href = "dashboard.html";
       } catch (error) {
+        console.error("SleepSync auth error:", error);
         message.textContent = SleepSyncAuth.mapAuthError(error);
       }
     };
@@ -310,6 +355,9 @@ const App = (() => {
     const userId = user.uid;
 
     const logoutButton = $("#logout-button");
+    const openLogModalButton = $("#open-log-modal");
+    const closeLogModalButton = $("#close-log-modal");
+    const sleepLogModal = $("#sleep-log-modal");
     if (logoutButton) {
       logoutButton.addEventListener("click", async () => {
         await SleepSyncAuth.logout();
@@ -327,15 +375,170 @@ const App = (() => {
     const submitButton = $("#sleep-submit");
     const cancelButton = $("#sleep-cancel");
     const historyContainer = $("#sleep-history");
+    const filterMode = $("#filter-mode");
+    const filterToggleButton = $("#filter-toggle");
+    const advancedFiltersPanel = $("#advanced-filters");
+    const filterDateFrom = $("#filter-date-from");
+    const filterDateTo = $("#filter-date-to");
+    const filterRatingMin = $("#filter-rating-min");
+    const filterRatingMax = $("#filter-rating-max");
+    const filterHoursMin = $("#filter-hours-min");
+    const filterHoursMax = $("#filter-hours-max");
+    const filterApplyButton = $("#filter-apply");
+    const filterResetButton = $("#filter-reset");
+    const filterResults = $("#filter-results");
 
-    let logs = SleepSyncStorage.getLogsForUser(userId);
+    const setDefaultDate = () => {
+      if (!dateInput || dateInput.value) return;
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    };
+
+    const openModal = () => {
+      if (!sleepLogModal) return;
+      sleepLogModal.classList.remove("hidden");
+      sleepLogModal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      setDefaultDate();
+    };
+
+    const closeModal = () => {
+      if (!sleepLogModal) return;
+      sleepLogModal.classList.add("hidden");
+      sleepLogModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    };
+
+    let logs = [];
     let editingId = null;
+    let activeAdvancedFilters = {
+      dateFrom: "",
+      dateTo: "",
+      ratingMin: null,
+      ratingMax: null,
+      hoursMin: null,
+      hoursMax: null,
+    };
 
-    const refresh = () => {
-      logs = SleepSyncStorage.getLogsForUser(userId);
+    const getQuickFilters = () => {
+      const mode = filterMode ? filterMode.value : "all";
+      const today = new Date();
+      const toDate = today.toISOString().slice(0, 10);
+
+      const subtractDays = (days) => {
+        const copy = new Date(today);
+        copy.setDate(copy.getDate() - days);
+        return copy.toISOString().slice(0, 10);
+      };
+
+      switch (mode) {
+        case "last7":
+          return { dateFrom: subtractDays(6), dateTo: toDate };
+        case "last30":
+          return { dateFrom: subtractDays(29), dateTo: toDate };
+        case "rating4plus":
+          return { ratingMin: 4 };
+        case "rating2minus":
+          return { ratingMax: 2 };
+        case "under6":
+          return { hoursMax: 6 };
+        case "over8":
+          return { hoursMin: 8 };
+        case "all":
+        default:
+          return {};
+      }
+    };
+
+    const getSpecificFiltersFromInputs = () => {
+      return {
+        dateFrom: filterDateFrom ? filterDateFrom.value : "",
+        dateTo: filterDateTo ? filterDateTo.value : "",
+        ratingMin: parseNumberOrNull(
+          filterRatingMin ? filterRatingMin.value : "",
+        ),
+        ratingMax: parseNumberOrNull(
+          filterRatingMax ? filterRatingMax.value : "",
+        ),
+        hoursMin: parseNumberOrNull(filterHoursMin ? filterHoursMin.value : ""),
+        hoursMax: parseNumberOrNull(filterHoursMax ? filterHoursMax.value : ""),
+      };
+    };
+
+    const getFilters = () => {
+      return {
+        ...activeAdvancedFilters,
+        ...getQuickFilters(),
+      };
+    };
+
+    const filterLogs = (sourceLogs, filters) => {
+      return sourceLogs.filter((log) => {
+        const dateValue = log.date || "";
+        const qualityValue = Number(log.quality);
+        const hoursValue = Number(log.hoursSlept);
+
+        if (filters.dateFrom && dateValue < filters.dateFrom) return false;
+        if (filters.dateTo && dateValue > filters.dateTo) return false;
+        if (
+          filters.ratingMin !== null &&
+          Number.isFinite(qualityValue) &&
+          qualityValue < filters.ratingMin
+        ) {
+          return false;
+        }
+        if (
+          filters.ratingMax !== null &&
+          Number.isFinite(qualityValue) &&
+          qualityValue > filters.ratingMax
+        ) {
+          return false;
+        }
+        if (
+          filters.hoursMin !== null &&
+          Number.isFinite(hoursValue) &&
+          hoursValue < filters.hoursMin
+        ) {
+          return false;
+        }
+        if (
+          filters.hoursMax !== null &&
+          Number.isFinite(hoursValue) &&
+          hoursValue > filters.hoursMax
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+    };
+
+    const refreshFilteredHistory = () => {
+      const filters = getFilters();
+      const filteredLogs = filterLogs(logs, filters);
+      const hasActiveFilters = Object.values(filters).some(
+        (value) => value !== "" && value !== null,
+      );
+
+      if (filterResults) {
+        if (hasActiveFilters) {
+          filterResults.textContent = `Showing ${filteredLogs.length} of ${logs.length} entries`;
+        } else {
+          filterResults.textContent = `Showing all ${logs.length} entries`;
+        }
+      }
+
+      renderHistory(filteredLogs, {
+        showExampleWhenEmpty: !hasActiveFilters,
+        emptyTitle: "No logs match these filters",
+        emptyMessage: "Try a wider date range or adjust rating/hours limits.",
+      });
+    };
+
+    const refresh = async () => {
+      logs = await SleepSyncStorage.getLogsForUser(userId);
       renderStats(logs);
       renderChart(logs);
-      renderHistory(logs);
+      refreshFilteredHistory();
     };
 
     const updateHoursPreview = () => {
@@ -354,6 +557,7 @@ const App = (() => {
       logIdInput.value = "";
       submitButton.textContent = "Add Entry";
       cancelButton.classList.add("hidden");
+      setDefaultDate();
     };
 
     const setEditing = (log) => {
@@ -373,10 +577,76 @@ const App = (() => {
     if (startInput) startInput.addEventListener("change", updateHoursPreview);
     if (endInput) endInput.addEventListener("change", updateHoursPreview);
 
-    cancelButton.addEventListener("click", resetForm);
+    if (openLogModalButton) {
+      openLogModalButton.addEventListener("click", () => {
+        resetForm();
+        openModal();
+      });
+    }
+
+    if (closeLogModalButton) {
+      closeLogModalButton.addEventListener("click", closeModal);
+    }
+
+    if (sleepLogModal) {
+      sleepLogModal.addEventListener("click", (event) => {
+        if (event.target === sleepLogModal) {
+          closeModal();
+        }
+      });
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    });
+
+    if (filterMode) {
+      filterMode.addEventListener("change", refreshFilteredHistory);
+    }
+
+    if (filterToggleButton && advancedFiltersPanel) {
+      filterToggleButton.addEventListener("click", () => {
+        advancedFiltersPanel.classList.toggle("hidden");
+      });
+    }
+
+    if (filterApplyButton) {
+      filterApplyButton.addEventListener("click", () => {
+        activeAdvancedFilters = getSpecificFiltersFromInputs();
+        refreshFilteredHistory();
+      });
+    }
+
+    if (filterResetButton) {
+      filterResetButton.addEventListener("click", () => {
+        if (filterMode) filterMode.value = "all";
+        if (filterDateFrom) filterDateFrom.value = "";
+        if (filterDateTo) filterDateTo.value = "";
+        if (filterRatingMin) filterRatingMin.value = "";
+        if (filterRatingMax) filterRatingMax.value = "";
+        if (filterHoursMin) filterHoursMin.value = "";
+        if (filterHoursMax) filterHoursMax.value = "";
+        activeAdvancedFilters = {
+          dateFrom: "",
+          dateTo: "",
+          ratingMin: null,
+          ratingMax: null,
+          hoursMin: null,
+          hoursMax: null,
+        };
+        refreshFilteredHistory();
+      });
+    }
+
+    cancelButton.addEventListener("click", () => {
+      resetForm();
+      closeModal();
+    });
     cancelButton.classList.add("hidden");
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       if (
@@ -403,22 +673,30 @@ const App = (() => {
         notes: notesInput.value.trim(),
       };
 
-      if (editingId) {
-        SleepSyncStorage.updateLog(userId, editingId, entry);
-      } else {
-        SleepSyncStorage.addLog(userId, {
-          ...entry,
-          id: SleepSyncStorage.createId(),
-          createdAt: new Date().toISOString(),
-        });
-      }
+      try {
+        if (editingId) {
+          await SleepSyncStorage.updateLog(userId, editingId, entry);
+        } else {
+          await SleepSyncStorage.addLog(userId, {
+            ...entry,
+            id: SleepSyncStorage.createId(),
+            createdAt: new Date().toISOString(),
+          });
+        }
 
-      resetForm();
-      refresh();
+        resetForm();
+        closeModal();
+        await refresh();
+      } catch (error) {
+        console.error("SleepSync storage error:", error);
+        window.alert(
+          "Could not save sleep log. Please check your Firestore setup and try again.",
+        );
+      }
     });
 
     if (historyContainer) {
-      historyContainer.addEventListener("click", (event) => {
+      historyContainer.addEventListener("click", async (event) => {
         const button = event.target.closest("button");
         if (!button) return;
         const action = button.dataset.action;
@@ -428,24 +706,31 @@ const App = (() => {
 
         if (action === "edit") {
           const log = logs.find((entry) => entry.id === logId);
-          if (log) setEditing(log);
+          if (log) {
+            setEditing(log);
+            openModal();
+          }
         }
 
         if (action === "delete") {
           const shouldDelete = window.confirm("Delete this sleep log?");
           if (!shouldDelete) return;
-          SleepSyncStorage.deleteLog(userId, logId);
-          refresh();
+          try {
+            await SleepSyncStorage.deleteLog(userId, logId);
+            await refresh();
+          } catch (error) {
+            console.error("SleepSync storage error:", error);
+            window.alert(
+              "Could not delete sleep log. Please check your Firestore setup and try again.",
+            );
+          }
         }
       });
     }
 
-    const today = new Date();
-    if (dateInput) {
-      dateInput.value = today.toISOString().slice(0, 10);
-    }
+    setDefaultDate();
 
-    refresh();
+    await refresh();
   };
 
   const init = async () => {
